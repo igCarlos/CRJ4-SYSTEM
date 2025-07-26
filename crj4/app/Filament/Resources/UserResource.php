@@ -8,6 +8,7 @@ use App\Models\User;
 use Filament\Actions\Exports\Enums\ExportFormat;
 use Filament\Actions\Exports\Jobs\ExportCsv;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -26,35 +27,41 @@ class UserResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('email')
-                    ->email()
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Select::make('roles')
-                    ->relationship('roles', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->searchable()
-                    ->options(function () {
-                        $query = Role::query();
-                        if (Auth::user()?->hasRole('vendedor')) {
-                            $query->where('name', '!=', 'super_admin');
-                        }
+            
+           ->schema([
+                Section::make("Informacion Del Usuario")
+                 ->schema([
+                    Forms\Components\TextInput::make('name')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('email')
+                        ->email()
+                        ->required()
+                        ->maxLength(255)
+                    ->unique(ignoreRecord: true)
+                        ,
+                    Forms\Components\Select::make('roles')
+                        ->relationship('roles', 'name')
+                        ->multiple()
+                        ->preload()
+                        ->searchable()
+                        ->options(function () {
+                            $query = Role::query();
+                            if (Auth::user()?->hasRole('vendedor')) {
+                                $query->where('name', '!=', 'super_admin');
+                            }
 
-                        return $query->pluck('name', 'id');
-                    })
-                    ->default(function () {
-                        return Role::where('name', 'vendedor')->pluck('id')->toArray();
-                    }),
-                Forms\Components\DateTimePicker::make('email_verified_at'),
-                Forms\Components\TextInput::make('password')
-                    ->password()
-                    ->required()
-                    ->maxLength(255),
+                            return $query->pluck('name', 'id');
+                        })
+                        ->default(function () {
+                            return Role::where('name', 'vendedor')->pluck('id')->toArray();
+                        }),
+                    Forms\Components\DateTimePicker::make('email_verified_at'),
+                    Forms\Components\TextInput::make('password')
+                        ->password()
+                        ->required()
+                        ->maxLength(255),
+                ])
             ]);
     }
 
