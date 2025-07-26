@@ -49,16 +49,21 @@ class UserPolicy
      * @param  \App\Models\User  $user
      * @return bool
      */
-    public function update(User $user, User $model): bool
+    public function update(User $user, User $targetUser): bool
     {
-        
-        if ($model->hasRole('super_admin') && !$user->hasRole('super_admin')) {
+        // Verifica si el usuario tiene permiso general
+        if (! $user->can('update_user')) {
             return false;
         }
 
-        return $user->can('update_user');
-    }
+        // Si el usuario objetivo es super_admin, solo otro super_admin puede actualizarlo
+        if ($targetUser->hasRole('super_admin') && ! $user->hasRole('super_admin')) {
+            return false;
+        }
 
+        // Permitido en otros casos
+        return true;
+    }
 
     /**
      * Determine whether the user can delete the model.
@@ -66,19 +71,26 @@ class UserPolicy
      * @param  \App\Models\User  $user
      * @return bool
      */
-    public function delete(User $user,User $model): bool
+    public function delete(User $user, User $targetUser): bool
     {
-        if ($model->hasRole('super_admin')) {
+        // Verifica si el usuario tiene permiso general para eliminar
+        if (! $user->can('delete_user')) {
             return false;
         }
 
-        if ($model->hasRole('super_admin') && !$user->hasRole('super_admin')) {
+        // Si el usuario objetivo es super_admin, solo otro super_admin puede eliminarlo
+        if ($targetUser->hasRole('super_admin') && ! $user->hasRole('super_admin')) {
             return false;
         }
 
-        return $user->can('delete_user');
+        // Si ambos son super_admin, no se pueden eliminar entre ellos
+        if ($user->hasRole('super_admin') && $targetUser->hasRole('super_admin')) {
+            return false;
+        }
+
+        // Permitido en otros casos
+        return true;
     }
-
     /**
      * Determine whether the user can bulk delete.
      *
