@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Actions\Exports\Enums\ExportFormat;
 use Filament\Actions\Exports\Jobs\ExportCsv;
 use Filament\Forms;
@@ -16,13 +17,16 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Date;
 use Spatie\Permission\Models\Role;
 
-class UserResource extends Resource
+class UserResource extends Resource implements HasShieldPermissions
 {
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
+
+    protected static ?string $label = 'Usuarios';
 
     public static function form(Form $form): Form
     {
@@ -47,7 +51,7 @@ class UserResource extends Resource
                         ->searchable()
                         ->options(function () {
                             $query = Role::query();
-                            if (Auth::user()?->hasRole('vendedor')) {
+                            if (!Auth::user()?->hasRole('super_admin')) {
                                 $query->where('name', '!=', 'super_admin');
                             }
 
@@ -58,9 +62,17 @@ class UserResource extends Resource
                         }),
                     Forms\Components\DateTimePicker::make('email_verified_at'),
                     Forms\Components\TextInput::make('password')
-                        ->password()
-                        ->required()
-                        ->maxLength(255),
+                    ->password()
+                    ->required()
+                    ->maxLength(255)
+                    ->hidden(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\EditRecord)
+                    ,
+                    Forms\Components\FileUpload::make('image_url')
+                    ->imageEditor()
+                    ->disk('public')
+                     ->previewable()
+                    ,
+                        
                 ])
             ]);
     }
@@ -69,10 +81,23 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('image_url')
+                    ->label('Avatar')
+                    ->circular()
+                    ->searchable()
+                    ->url(fn ($record) => asset('storage/' . $record->image_url))          
+                    ->getStateUsing(fn ($record) =>
+        $record->image_url
+            ? asset('storage/' . $record->image_url)
+            : 'https://ui-avatars.com/api/?name=' . urlencode($record->name)
+    )
+                ->disabledClick()
+    ,
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
-                    ->searchable(),
+                    ->searchable()
+                    ,
                  Tables\Columns\TextColumn::make('roles.name')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -84,7 +109,8 @@ class UserResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email_verified_at')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -98,6 +124,24 @@ class UserResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('verificar_correo')
+                ->visible(fn () => auth()->user()->can('verificar_correo_user'))
+                ->icon('heroicon-o-check-badge')
+                ->button()
+                ->action(function(User $user){
+                    $user->email_verified_at = Date('Y-m-d H:i:s');
+                    $user->save();
+                })
+                ,
+                Tables\Actions\Action::make('desverificar_Correo')
+                ->visible(fn () => auth()->user()->can('desverificar_correo_user'))
+                ->icon('heroicon-o-x-circle')
+                ->button()
+                ->action(function(User $user){
+                    $user->email_verified_at = null;
+                    $user->save();
+                })
+                ,
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),                            
             ])
@@ -123,4 +167,19 @@ class UserResource extends Resource
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
+
+     public static function getPermissionPrefixes(): array
+    {
+        return [
+            'view',
+            'view_any',
+            'create',
+            'update',
+            'delete',
+            'delete_any',
+            'verificar_correo',
+            'desverificar_correo',
+        ];
+    }
+
 }

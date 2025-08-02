@@ -20,9 +20,11 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'image_url',
         'name',
         'email',
         'password',
+        'email_verified_at',
     ];
 
     /**
@@ -59,4 +61,13 @@ class User extends Authenticatable
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        return $this->image_url
+            ? asset('storage/' . $this->image_url)
+            : 'https://ui-avatars.com/api/?name=' . urlencode($this->name);
+    }
+
+
 }

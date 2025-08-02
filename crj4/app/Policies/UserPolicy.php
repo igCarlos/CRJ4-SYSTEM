@@ -49,20 +49,9 @@ class UserPolicy
      * @param  \App\Models\User  $user
      * @return bool
      */
-    public function update(User $user, User $targetUser): bool
+    public function update(User $user): bool
     {
-        // Verifica si el usuario tiene permiso general
-        if (! $user->can('update_user')) {
-            return false;
-        }
-
-        // Si el usuario objetivo es super_admin, solo otro super_admin puede actualizarlo
-        if ($targetUser->hasRole('super_admin') && ! $user->hasRole('super_admin')) {
-            return false;
-        }
-
-        // Permitido en otros casos
-        return true;
+        return $user->can('update_user');
     }
 
     /**
@@ -71,26 +60,11 @@ class UserPolicy
      * @param  \App\Models\User  $user
      * @return bool
      */
-    public function delete(User $user, User $targetUser): bool
+    public function delete(User $user): bool
     {
-        // Verifica si el usuario tiene permiso general para eliminar
-        if (! $user->can('delete_user')) {
-            return false;
-        }
-
-        // Si el usuario objetivo es super_admin, solo otro super_admin puede eliminarlo
-        if ($targetUser->hasRole('super_admin') && ! $user->hasRole('super_admin')) {
-            return false;
-        }
-
-        // Si ambos son super_admin, no se pueden eliminar entre ellos
-        if ($user->hasRole('super_admin') && $targetUser->hasRole('super_admin')) {
-            return false;
-        }
-
-        // Permitido en otros casos
-        return true;
+        return $user->can('delete_user');
     }
+
     /**
      * Determine whether the user can bulk delete.
      *
@@ -110,7 +84,7 @@ class UserPolicy
      */
     public function forceDelete(User $user): bool
     {
-        return $user->can('force_delete_user');
+        return $user->can('{{ ForceDelete }}');
     }
 
     /**
@@ -121,7 +95,7 @@ class UserPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_user');
+        return $user->can('{{ ForceDeleteAny }}');
     }
 
     /**
@@ -132,7 +106,7 @@ class UserPolicy
      */
     public function restore(User $user): bool
     {
-        return $user->can('restore_user');
+        return $user->can('{{ Restore }}');
     }
 
     /**
@@ -143,7 +117,7 @@ class UserPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_user');
+        return $user->can('{{ RestoreAny }}');
     }
 
     /**
@@ -154,7 +128,7 @@ class UserPolicy
      */
     public function replicate(User $user): bool
     {
-        return $user->can('replicate_user');
+        return $user->can('{{ Replicate }}');
     }
 
     /**
@@ -165,6 +139,6 @@ class UserPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_user');
+        return $user->can('{{ Reorder }}');
     }
 }
