@@ -46,14 +46,12 @@ return [
             'delete_any',
             'force_delete',
             'force_delete_any',
-            'import',
-            'exporter',
         ],
 
         'page' => 'page',
         'widget' => 'widget',
     ],
-    
+
     'entities' => [
         'pages' => true,
         'widgets' => true,
@@ -90,6 +88,5 @@ return [
     'register_role_policy' => [
         'enabled' => true,
     ],
-
 
 ];

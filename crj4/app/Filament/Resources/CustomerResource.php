@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CategoryResource\Pages;
-use App\Filament\Resources\CategoryResource\RelationManagers;
-use App\Models\Category;
+use App\Filament\Resources\CustomerResource\Pages;
+use App\Filament\Resources\CustomerResource\RelationManagers;
+use App\Models\Customer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,17 +12,12 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 
-class CategoryResource extends Resource
+class CustomerResource extends Resource
 {
-    protected static ?string $model = Category::class;
+    protected static ?string $model = Customer::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-tag';
-
-    protected static ?string $navigationLabel = 'Categoria';
-
-    protected static ?string $label = 'Categoria';
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
     public static function form(Form $form): Form
     {
@@ -31,9 +26,23 @@ class CategoryResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\Textarea::make('description')
-                    ->required()
-                    ->columnSpanFull(),
+                Forms\Components\TextInput::make('email')
+                    ->email()
+                    ->maxLength(255)
+                    ->default(null),
+                Forms\Components\TextInput::make('phone')
+                    ->tel()
+                    ->maxLength(255)
+                    ->default(null),
+                Forms\Components\TextInput::make('address')
+                    ->maxLength(255)
+                    ->default(null),
+                Forms\Components\FileUpload::make('image_url')
+                    ->image(),
+                Forms\Components\TextInput::make('identification')
+                    ->maxLength(255)
+                    ->default(null),
+                Forms\Components\DateTimePicker::make('email_verified_at'),
                 Forms\Components\Toggle::make('state')
                     ->required(),
             ]);
@@ -45,8 +54,18 @@ class CategoryResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('description')
+                Tables\Columns\TextColumn::make('email')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('phone')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('address')
+                    ->searchable(),
+                Tables\Columns\ImageColumn::make('image_url'),
+                Tables\Columns\TextColumn::make('identification')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('email_verified_at')
+                    ->dateTime()
+                    ->sortable(),
                 Tables\Columns\IconColumn::make('state')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
@@ -63,13 +82,10 @@ class CategoryResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    ExportBulkAction::make(),
                 ]),
             ]);
     }
@@ -84,9 +100,9 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCategories::route('/'),
-            'create' => Pages\CreateCategory::route('/create'),
-            'edit' => Pages\EditCategory::route('/{record}/edit'),
+            'index' => Pages\ListCustomers::route('/'),
+            'create' => Pages\CreateCustomer::route('/create'),
+            'edit' => Pages\EditCustomer::route('/{record}/edit'),
         ];
     }
 }

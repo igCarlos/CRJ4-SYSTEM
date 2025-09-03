@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 
 class Product extends Model
@@ -31,11 +32,15 @@ class Product extends Model
         return $this->belongsTo(Supplier::class);
     }
 
-    protected static function booted()
+    public function sales_details() : HasMany
     {
-        static::creating(function ($producto) {
-            $producto->code = 'PROD-' . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
-        });
+        return $this->hasMany(Detail::class);
     }
+
+    public function movements()
+    {
+        return $this->hasMany(Movement::class);
+    }
+
 
 }

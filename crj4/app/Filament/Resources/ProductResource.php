@@ -21,14 +21,16 @@ use Filament\Tables\Actions\ImportAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\File;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction as TablesExportBulkAction;
 
 class ProductResource extends Resource
 {
     
     protected static ?string $model = Product::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-folder';
 
     public static function form(Form $form): Form
     {
@@ -41,7 +43,11 @@ class ProductResource extends Resource
                     ->default(fn () => 'PROD-' . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT))
                     ->required()
                     ->unique()
-                    ->disabled()
+                    ->disabled() // <- el usuario lo verá pero no podrá editarlo
+                    ->dehydrated() // <- asegura que aún se guarde en la BD
+                    ->rules([
+                        Rule::unique('products', 'code')->ignore(fn ($record) => $record?->id),
+                    ])
                     ->maxLength(255),
                 Forms\Components\Textarea::make('description')
                     ->columnSpanFull(),
@@ -93,7 +99,8 @@ class ProductResource extends Resource
                     ->required()
                     ->numeric()
                     ->prefixIcon('heroicon-o-clipboard-document-list')
-                    ->type('text')
+                    ->disabled()
+                    ->dehydrated()
                     ->default(0),
                 Forms\Components\Toggle::make('state')
                     ->required(),
@@ -138,25 +145,15 @@ class ProductResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                
+                Tables\Actions\EditAction::make(),                
             ])
             ->headerActions([
-                ExportAction::make()
-                ->label('Exportar productos')
-                ->exporter(ProductExporter::class)
-                ->formats([
-                    ExportFormat::Csv,
-                ])
-                ->visible(fn () => auth()->user()?->can('exporter_product')),
-                ImportAction::make()
-                ->label('Importar productos')
-                ->importer(ProductsImportImporter::class)
-                ->visible(fn () => auth()->user()?->can('import_product')),
+               
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    TablesExportBulkAction::make(),
                 ]),
             ]);
     }
@@ -176,21 +173,6 @@ class ProductResource extends Resource
             'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
     }
-
-    public static function getImporters(): array
-    {
-        return [
-            ProductsImportImporter::class,
-        ];
-    }
-
-    public static function getExporters(): array
-    {
-        return [
-            \App\Filament\Exports\ProductsExporter::class,
-        ];
-    }
-
 
 
 }

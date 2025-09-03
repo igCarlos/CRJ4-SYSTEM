@@ -10,6 +10,10 @@ Route::get('/', function () {
     return redirect()->route('filament.dashboard.pages.dashboard');
 });
 
+Route::get('/factura', function(){
+    return view('factura');
+});
+
 // Route::view('dashboard', 'dashboard')
 //     ->middleware(['auth', 'verified'])
 //     ->name('dashboard');
