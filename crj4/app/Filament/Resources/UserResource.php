@@ -80,6 +80,7 @@ class UserResource extends Resource implements HasShieldPermissions
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at','desc')
             ->columns([
                 Tables\Columns\ImageColumn::make('image_url')
                     ->label('Avatar')
@@ -124,21 +125,19 @@ class UserResource extends Resource implements HasShieldPermissions
                 //
             ])
             ->actions([
-                Tables\Actions\Action::make('verificar_correo')
-                ->visible(fn () => auth()->user()->can('verificar_correo_user'))
-                ->icon('heroicon-o-check-badge')
+                Tables\Actions\Action::make('toggle_verificacion')
+                ->label(fn (User $record) => $record->email_verified_at ? 'Desverificar' : 'Verificar')
+                ->icon(fn (User $record) => $record->email_verified_at ? 'heroicon-o-x-circle' : 'heroicon-o-check-badge')
                 ->button()
-                ->action(function(User $user){
-                    $user->email_verified_at = Date('Y-m-d H:i:s');
-                    $user->save();
-                })
-                ,
-                Tables\Actions\Action::make('desverificar_Correo')
-                ->visible(fn () => auth()->user()->can('desverificar_correo_user'))
-                ->icon('heroicon-o-x-circle')
-                ->button()
-                ->action(function(User $user){
-                    $user->email_verified_at = null;
+                ->visible(fn () => auth()->user()->can('verificar_correo_user') || auth()->user()->can('desverificar_correo_user'))
+                ->action(function (User $user) {
+                    if ($user->email_verified_at) {
+                        // Si ya estaba verificado, desverificar
+                        $user->email_verified_at = null;
+                    } else {
+                        // Si no estaba verificado, verificar
+                        $user->email_verified_at = now();
+                    }
                     $user->save();
                 })
                 ,

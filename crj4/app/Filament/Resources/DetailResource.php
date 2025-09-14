@@ -4,16 +4,22 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\DetailResource\Pages;
 use App\Models\Detail;
+use App\Models\Sale;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Mail\Events\MessageSent;
+
+use function Laravel\Prompts\alert;
 
 class DetailResource extends Resource
 {
     protected static ?string $model = Detail::class;
-
+    protected static ?string $label = "Comprobar Factura";
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     // 🚫 No necesitamos form porque no se podrá crear/editar
@@ -25,6 +31,7 @@ class DetailResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->defaultSort('created_at','desc')
             ->columns([
                 Tables\Columns\TextColumn::make('sale.id')
                     ->label('Venta')
@@ -77,13 +84,48 @@ class DetailResource extends Resource
                             ->when($data['until'], fn ($q, $date) => $q->whereDate('created_at', '<=', $date));
                     }),
 
-                // 🔹 Filtro por producto
+                // 🔹 Filtro por Categoria
                 Tables\Filters\SelectFilter::make('product_id')
                     ->relationship('product', 'name')
                     ->label('Producto'),
             ])
-            ->actions([]) // 🚫 sin acciones (editar/eliminar en filas)
-            ->bulkActions([]); // 🚫 sin acciones masivas
+            ->actions([
+                ViewAction::make('ver_detalle')
+                    ->label('Ver Detalle')
+                    ->icon('heroicon-o-eye')
+                    ->modalHeading('Detalle de la Venta')
+                    ->modalWidth('lg') // tamaño del modal
+                    ->record(fn ($record) => $record->load('sale','sale.customer', 'sale.user', 'sale.sales_details.product'))
+                    
+            ]) // 🚫 sin acciones (editar/eliminar en filas)
+            ->bulkActions([]) // 🚫 sin acciones masivas
+           ->headerActions([
+             Tables\Actions\Action::make('buscar_factura')
+                ->form([
+                    Forms\Components\TextInput::make('sale_id')
+                        ->label('Buscar ID de Venta')
+                        ->numeric(),
+                ])
+             ->action(function (array $data) {
+                    if (!empty($data['sale_id'])) {
+                        $sale = Sale::find($data['sale_id']); // Busca por la clave primaria del modelo
+
+                        if ($sale) {
+                            Notification::make()
+                                ->title('La Factura Que Solicita Es Valida.')
+                                ->body("La venta con ID {$data['sale_id']} existe.")
+                                ->success()
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->title('La Factura Que Solicita No Es Valida')
+                                ->body("La venta con ID {$data['sale_id']} no existe.")
+                                ->danger()
+                                ->send();
+                        }
+                    }
+                }),
+            ]);
     }
 
     public static function getRelations(): array

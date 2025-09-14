@@ -6,6 +6,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Movement;
+use App\Models\Sale;
 
 class Detail extends Model
 {
@@ -33,6 +34,16 @@ class Detail extends Model
 
 protected static function booted()
 {
+    static::created(function ($detail) {
+        // Actualizar el total de la venta
+        $sale = $detail->sale;
+        if ($sale) {
+            $sale->updateQuietly([
+                'total' => $sale->sales_details()->sum('subtotal')
+            ]);
+        }
+    });
+    
     static::creating(function ($detail) {
         $product = $detail->product;
 

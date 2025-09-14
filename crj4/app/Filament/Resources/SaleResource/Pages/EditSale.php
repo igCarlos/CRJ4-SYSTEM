@@ -9,11 +9,24 @@ use Filament\Resources\Pages\EditRecord;
 class EditSale extends EditRecord
 {
     protected static string $resource = SaleResource::class;
+    
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 
     protected function getHeaderActions(): array
     {
         return [
             Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $details = $data['sales_details'] ?? [];
+        $data['total'] = collect($details)->sum('subtotal');
+
+        return $data;
     }
 }

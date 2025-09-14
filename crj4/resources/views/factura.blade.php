@@ -1,40 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Factura #1</title>
-    <style>
-        body { font-family: DejaVu Sans, sans-serif; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
-    </style>
-</head>
-<body>
-    <h2>Factura 3</h2>
-    <p><strong>Cliente:</strong> jose</p>
-    <p><strong>Fecha:</strong> 02/09/2025</p>
+<div class="p-4">
+    <h2 class="text-lg font-bold mb-4">Factura Venta #{{ $record->sale->id }}</h2>
 
-    <table>
+    <p><strong>Cliente:</strong> {{ $record->sale->customer->name }}</p>
+    <p><strong>Usuario:</strong> {{ $record->sale->user->name }}</p>
+    <p><strong>Método de Pago:</strong> {{ $record->sale->payment_method }}</p>
+    <p><strong>Total:</strong> {{ $record->sale->total }}</p>
+
+    <h3 class="mt-4 font-semibold">Detalle de Productos:</h3>
+    <table class="table-auto w-full border mt-2">
         <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Precio unitario</th>
-                <th>Subtotal</th>
+            <tr class="border-b">
+                <th class="px-2 py-1">Producto</th>
+                <th class="px-2 py-1">Cantidad</th>
+                <th class="px-2 py-1">Precio Unitario</th>
+                <th class="px-2 py-1">Subtotal</th>
             </tr>
         </thead>
         <tbody>
-           
-                <tr>
-                    <td>Dell</td>
-                    <td>4</td>
-                    <td>400</td>
-                    <td>1600</td>
-                </tr>
-            
+            @foreach($record->sale->sales_details as $detalle)
+            <tr class="border-b">
+                <td class="px-2 py-1">{{ $detalle->product->name }}</td>
+                <td class="px-2 py-1">{{ $detalle->amount }}</td>
+                <td class="px-2 py-1">{{ $detalle->unit_price }}</td>
+                <td class="px-2 py-1">{{ $detalle->subtotal }}</td>
+            </tr>
+            @endforeach
         </tbody>
     </table>
-
-    <h3>Total: 1600</h3>
-</body>
-</html>
+</div>

@@ -32,6 +32,6 @@ class Sale extends Model
     {
         return $this->belongsTo(User::class);
     }
-    
+
 
 }

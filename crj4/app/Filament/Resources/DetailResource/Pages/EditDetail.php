@@ -9,6 +9,11 @@ use Filament\Resources\Pages\EditRecord;
 class EditDetail extends EditRecord
 {
     protected static string $resource = DetailResource::class;
+    
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 
     protected function getHeaderActions(): array
     {

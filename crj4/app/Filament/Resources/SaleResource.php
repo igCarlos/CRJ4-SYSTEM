@@ -6,6 +6,7 @@ use App\Filament\Resources\SaleResource\Pages;
 use App\Filament\Resources\SaleResource\RelationManagers;
 use App\Models\Sale;
 use Filament\Forms;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -51,28 +52,60 @@ class SaleResource extends Resource
                                 }
                             })
                             ,
-                        TextInput::make('customer_id')
-                            ->label('Cliente')
-                            ->required()
-                            ->disabled()
-                            ,
+                       
                         Forms\Components\Select::make('customer_id')
                             ->label('Cliente')
-                            ->relationship('customer','name')
+                            ->relationship('customer', 'name',fn($query)=>$query->where('state',true))
                             ->searchable()
-                            ->required(),
+                            ->required()
+                            ->createOptionForm([
+                                    Forms\Components\TextInput::make('name')
+                                        ->required()
+                                        ->maxLength(255),
+                                    Forms\Components\TextInput::make('email')
+                                        ->email()
+                                        ->maxLength(255)
+                                        ->default(null),
+                                    Forms\Components\TextInput::make('phone')
+                                        ->tel()
+                                        ->maxLength(255)
+                                        ->default(null),
+                                    Forms\Components\TextInput::make('address')
+                                        ->maxLength(255)
+                                        ->default(null),
+                                    Forms\Components\FileUpload::make('image_url')
+                                        ->image(),
+                                    Forms\Components\TextInput::make('identification')
+                                        ->maxLength(255)
+                                        ->default(null),
+                                    Forms\Components\DateTimePicker::make('email_verified_at')
+                                        ->default(now())
+                                    ,
+                                    Forms\Components\Toggle::make('state')
+                                        ->required(),
+                                ])
+                            ->createOptionAction(function (Action $action) {
+                                return $action->visible(fn () => auth()->user()?->can('create_customer'));
+                            })
+                        
+                            ,
                         Forms\Components\DateTimePicker::make('sale_date')
-                            ->required(),
+                            ->required()
+                            ->default(now())
+                            ->native(false)
+                            ->disabled()
+                            ->dehydrated()
+                            ,
                         Forms\Components\TextInput::make('total')
                             ->required()
                             ->numeric()
                             ->reactive()
-                            ->disabled() // <- el usuario lo verá pero no podrá editarlo
-                            ->afterStateHydrated(function ($set, $get) {
+                            ->disabled() 
+                            ->dehydrated() // <- asegura que aún se guarde en la BD
+                            ->afterStateUpdated(function ($state, $set, $get) {
                                 $details = $get('sales_details') ?? [];
                                 $set('total', collect($details)->sum('subtotal'));
                             })
-                            ->dehydrated() // <- asegura que aún se guarde en la BD
                             ,
                         Forms\Components\Select::make('payment_method')
                              ->options([
@@ -123,6 +156,8 @@ class SaleResource extends Resource
                             ->afterStateUpdated(function ($state, $set, $get) {
                                 $unitPrice = $get('unit_price') ?? 0;
                                 $set('subtotal', $unitPrice * $state);
+                                 // actualizar total
+                                $set('../../total', collect($get('../../sales_details'))->sum('subtotal'));
 
                                 $product = \App\Models\Product::find($get('product_id'));
                                  if ($product && $state > $product->stock) {
@@ -134,9 +169,6 @@ class SaleResource extends Resource
 
                                             
                                     }
-
-                                // actualizar total
-                                 $set('../../total', collect($get('../../sales_details'))->sum('subtotal'));
                             }),
                         Forms\Components\TextInput::make('unit_price')
                             ->numeric()
@@ -159,6 +191,7 @@ class SaleResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('sale_date', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('customer_id')
                     ->numeric()
@@ -174,7 +207,8 @@ class SaleResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sale_date')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ,
                 Tables\Columns\TextColumn::make('total')
                     ->numeric()
                     ->sortable(),
