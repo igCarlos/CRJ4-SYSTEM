@@ -13,6 +13,7 @@ use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Mail\Events\MessageSent;
+use Filament\Tables\Actions\Action as TableAction;
 
 use function Laravel\Prompts\alert;
 
@@ -89,15 +90,7 @@ class DetailResource extends Resource
                     ->relationship('product', 'name')
                     ->label('Producto'),
             ])
-            ->actions([
-                ViewAction::make('ver_detalle')
-                    ->label('Ver Detalle')
-                    ->icon('heroicon-o-eye')
-                    ->modalHeading('Detalle de la Venta')
-                    ->modalWidth('lg') // tamaño del modal
-                    ->record(fn ($record) => $record->load('sale','sale.customer', 'sale.user', 'sale.sales_details.product'))
-                    
-            ]) // 🚫 sin acciones (editar/eliminar en filas)
+            ->actions([]) // 🚫 sin acciones (editar/eliminar en filas)
             ->bulkActions([]) // 🚫 sin acciones masivas
            ->headerActions([
              Tables\Actions\Action::make('buscar_factura')

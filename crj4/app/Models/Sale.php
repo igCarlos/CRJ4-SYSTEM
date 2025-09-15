@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\DB;
 
 class Sale extends Model
 {
+    protected $casts = [
+    'sale_date' => 'datetime',
+    ];
+    
     protected $fillable = [
         'customer_id',
         'user_id',

@@ -13,11 +13,13 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Exceptions\Cancel;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
+use Filament\Tables\Actions\Action as TableAction;
 
 class SaleResource extends Resource
 {
@@ -235,6 +237,28 @@ class SaleResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                TableAction::make('ver_factura')
+                    ->label('Ver Factura')
+                    ->icon('heroicon-o-document-text')
+                    //->url(fn ($record) => route('sales.factura.show', $record))
+                    ->modalHeading('Factura PDF')
+                    ->modalContent(function ($record) {
+                        // Generar URL del PDF real
+                        $pdfUrl = route('sales.factura.show', ['sale' => $record->id]);
+
+                        // Retornar vista Blade con iframe
+                        return view('facturas.facturasModal', compact('pdfUrl'));
+                    })
+                    ->modalCloseButton(true)
+                    ->modalCancelAction(false)
+                    ->modalSubmitAction(false)
+                    ->color('secondary'),
+                TableAction::make('pdf')
+                    ->label('Descargar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->url(fn ($record) => route('sales.factura.pdf', $record))
+                    ->openUrlInNewTab()
+                    ->color('success'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

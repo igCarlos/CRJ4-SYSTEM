@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\facturaController;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
@@ -10,10 +11,12 @@ Route::get('/', function () {
     return redirect()->route('filament.dashboard.pages.dashboard');
 });
 
-Route::get('/factura', function(){
-    return view('factura');
-});
 
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('sales/{sale}/factura', [facturaController::class, 'show'])->name('sales.factura.show');
+    Route::get('sales/{sale}/factura/pdf', [facturaController::class, 'pdf'])->name('sales.factura.pdf');
+});
 // Route::view('dashboard', 'dashboard')
 //     ->middleware(['auth', 'verified'])
 //     ->name('dashboard');
